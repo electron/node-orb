@@ -1,0 +1,71 @@
+description: >
+  Simple drop-in job to test your Node.js project automatically.
+
+parameters:
+  cache-version:
+    default: v1
+    description: >
+      Change the default cache version if you need to clear the cache for any
+      reason.
+    type: string
+  checkout-steps:
+    default:
+      - checkout
+    description: Steps to use as the checkout steps.
+    type: steps
+  node-version:
+    description: Specify the Node.js version to install.
+    type: string
+  override-ci-command:
+    default: ''
+    description: >
+      By default, packages will be installed with "npm ci", "yarn install
+      --frozen-lockfile" or "yarn install --immutable".
+
+      Optionally supply a custom package installation command, with any
+      additional flags needed.
+    type: string
+  pkg-manager:
+    default: yarn
+    description: Select the default node package manager to use. NPM v5+ Required.
+    enum:
+      - npm
+      - yarn
+    type: enum
+  test-steps:
+    default:
+      - << parameters.pkg-manager >> test
+    description: Steps to use as the test steps.
+    type: steps
+  with-node-js-cache:
+    default: true
+    description: Cache the Node.js version to avoid re-downloading on future runs.
+    type: boolean
+  with-package-cache:
+    default: true
+    description: Cache your node packages automatically for faster install times.
+    type: boolean
+
+steps:
+  - steps: << parameters.checkout-steps >>
+  - when:
+      condition:
+        equal: [ yarn, << parameters.pkg-manager >> ]
+      steps:
+        - install:
+            install-yarn: true
+            node-version: << parameters.node-version >>
+            with-cache: << parameters.with-node-js-cache >>
+  - when:
+      condition:
+        equal: [ npm, << parameters.pkg-manager >> ]
+      steps:
+        - install:
+            node-version: << parameters.node-version >>
+            with-cache: << parameters.with-node-js-cache >>
+  - install-packages:
+      cache-version: << parameters.cache-version >>
+      override-ci-command: << parameters.override-ci-command >>
+      pkg-manager: << parameters.pkg-manager >>
+      with-cache: << parameters.with-package-cache >>
+  - steps: << parameters.test-steps >>

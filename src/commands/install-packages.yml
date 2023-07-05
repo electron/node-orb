@@ -1,0 +1,40 @@
+description: >
+  Install your Node packages with automated caching and best practices applied.
+  Requires lock file.
+
+parameters:
+  cache-version:
+    default: v1
+    description: >
+      Change the default cache version if you need to clear the cache for any
+      reason.
+    type: string
+  override-ci-command:
+    default: ""
+    description: >
+      By default, packages will be installed with "npm ci", "yarn install
+      --frozen-lockfile" or "yarn install --immutable".
+
+      Optionally supply a custom package installation command, with any
+      additional flags needed.
+    type: string
+  pkg-manager:
+    default: yarn
+    description: Select the default node package manager to use. NPM v5+ Required.
+    enum:
+      - npm
+      - yarn
+    type: enum
+  with-cache:
+    default: true
+    description: Cache your node packages automatically for faster install times.
+    type: boolean
+
+# This is simply a wrapper around the circleci/node orb's install-packages
+# with fewer options and defaults that better suit our specific needs
+steps:
+  - circleci-node/install-packages:
+      cache-version: << parameters.cache-version >>
+      override-ci-command: << parameters.override-ci-command >>
+      pkg-manager: << parameters.pkg-manager >>
+      with-cache: << parameters.with-cache >>

@@ -1,0 +1,7 @@
+description: >
+  Windows executor.
+
+machine:
+  image: windows-server-2022-gui:stable
+  resource_class: windows.medium
+  shell: bash.exe

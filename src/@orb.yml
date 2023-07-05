@@ -1,0 +1,10 @@
+version: 2.1
+
+description: >
+  Easily install Node.js across all platforms: Linux, macOS, Windows.
+
+display:
+  source_url: "https://github.com/electron/node-orb"
+
+orbs:
+  circleci-node: circleci/node@5.1.0

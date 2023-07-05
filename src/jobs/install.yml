@@ -1,0 +1,33 @@
+description: >
+  Install specified Node.js version, running on the specified executor.
+
+executor: <<parameters.executor>>
+
+parameters:
+  cache-version:
+    default: v1
+    description: >
+      Change the default cache version if you need to clear the cache for any
+      reason.
+    type: string
+  executor:
+    description: The executor to use for the job.
+    type: executor
+  install-yarn:
+    default: true
+    description: Install Yarn?
+    type: boolean
+  node-version:
+    description: Specify the Node.js version to install.
+    type: string
+  with-cache:
+    default: true
+    description: Cache the Node.js version to avoid re-downloading on future runs.
+    type: boolean
+
+steps:
+  - install:
+      cache-version: << parameters.cache-version >>
+      install-yarn: << parameters.install-yarn >>
+      node-version: << parameters.node-version >>
+      with-cache: << parameters.with-cache >>

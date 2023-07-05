@@ -1,0 +1,5 @@
+description: >
+  Docker on Linux executor.
+
+docker:
+  - image: cimg/base:stable

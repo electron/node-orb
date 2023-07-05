@@ -1,0 +1,14 @@
+description: >
+  Example using the test job to run tests for a Node.js package.
+
+usage:
+  version: 2.1
+  orbs:
+    node: electron/node@x.y.z
+  workflows:
+    test:
+      jobs:
+        - node/test:
+            name: test
+            executor: node/macos
+            node-version: 18.16.1

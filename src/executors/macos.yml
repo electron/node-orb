@@ -1,0 +1,7 @@
+description: >
+  macOS executor.
+
+macos:
+  xcode: "14.3.0"
+
+resource_class: macos.x86.medium.gen2

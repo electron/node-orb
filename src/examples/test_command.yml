@@ -1,0 +1,26 @@
+description: >
+  Example using the test command to run tests for a Node.js package.
+
+usage:
+  version: 2.1
+  orbs:
+    node: electron/node@x.y.z
+  jobs:
+    test:
+      executor: node/macos
+      parameters:
+        node-version:
+          description: Specify the Node.js version to install.
+          type: string
+      steps:
+        - node/test:
+            node-version: << parameters.node-version >>
+  workflows:
+    test:
+      jobs:
+        - test:
+            matrix:
+              parameters:
+                node-version:
+                  - 18.14.0
+                  - 16.19.0

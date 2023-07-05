@@ -1,0 +1,27 @@
+description: >
+  Example using the install command to check the installed Node.js version.
+
+usage:
+  version: 2.1
+  orbs:
+    node: electron/node@x.y.z
+  jobs:
+    check-version:
+      executor: node/macos
+      parameters:
+        node-version:
+          description: Specify the Node.js version to install.
+          type: string
+      steps:
+        - node/install:
+            node-version: << parameters.node-version >>
+        - run: node -v
+  workflows:
+    check_node_version:
+      jobs:
+        - check-version:
+            matrix:
+              parameters:
+                node-version:
+                  - 18.14.0
+                  - 16.19.0

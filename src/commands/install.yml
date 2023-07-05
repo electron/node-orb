@@ -1,0 +1,53 @@
+description: >
+  Install specified Node.js version.
+
+parameters:
+  cache-version:
+    default: v1
+    description: >
+      Change the default cache version if you need to clear the cache for any
+      reason.
+    type: string
+  install-yarn:
+    default: true
+    description: Install Yarn?
+    type: boolean
+  node-version:
+    description: Specify the Node.js version to install.
+    type: string
+  with-cache:
+    default: true
+    description: Cache the Node.js version to avoid re-downloading on future runs.
+    type: boolean
+
+steps:
+  - run:
+      command: <<include(scripts/install-nvm.sh)>>
+      name: Install nvm
+  - when:
+      condition: << parameters.with-cache >>
+      steps:
+        - restore_cache:
+            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-<<parameters.node-version>>
+        - run:
+            command: <<include(scripts/restore-node-js-cache.sh)>>
+            name: Restore cached Node.js
+  - run:
+      command: <<include(scripts/install-node.sh)>>
+      environment:
+        NODE_PARAM_VERSION: <<parameters.node-version>>
+      name: Install Node.js <<parameters.node-version>>
+  - when:
+      condition: << parameters.with-cache >>
+      steps:
+        - run:
+            command: <<include(scripts/prepare-node-js-cache.sh)>>
+            name: Prepare Node.js cache
+        - save_cache:
+            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-<<parameters.node-version>>
+            paths:
+             - ~/.node-js-cache
+  - when:
+      condition: <<parameters.install-yarn>>
+      steps:
+        - run: npm install --global yarn
