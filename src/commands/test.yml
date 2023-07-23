@@ -34,7 +34,7 @@ parameters:
     type: enum
   test-steps:
     default:
-      - << parameters.pkg-manager >> test
+      - run: << parameters.pkg-manager >> test
     description: Steps to use as the test steps.
     type: steps
   with-node-js-cache:
