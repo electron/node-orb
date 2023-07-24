@@ -4,7 +4,7 @@ description: >
 usage:
   version: 2.1
   orbs:
-    node: electron/node@x.y.z
+    node: electronjs/node@x.y.z
   jobs:
     test:
       executor: node/macos
