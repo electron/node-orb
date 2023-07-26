@@ -49,6 +49,48 @@ jobs:
       - run:
           command: '[ $(node -v) == "v<<parameters.node-version>>" ]'
           name: Confirm Version
+  run-tests:
+    executor: << parameters.executor >>
+    parameters:
+      cache-version:
+        default: v1
+        description: >
+          Change the default cache version if you need to clear the cache for any
+          reason.
+        type: string
+      executor:
+        description: The executor to use for the job
+        type: string
+      node-version:
+        description: Specify the Node.js version to install
+        type: string
+      use-test-steps:
+        default: false
+        description: Use provided test steps - required due to CircleCI shortcomings.
+        type: boolean
+    steps:
+      - run:
+          command: '[ ! -f ~/project/sample/.test-ran ]'
+          name: Confirm Tests Haven't Run Yet
+      - node/test:
+          app-dir: ~/project/sample
+          cache-version: << parameters.cache-version >>
+          node-version: << parameters.node-version >>
+          test-steps:
+            - run: echo '1' > ~/project/sample/.custom-test-ran
+          use-test-steps: << parameters.use-test-steps >>
+      - unless:
+          condition: << parameters.use-test-steps >>
+          steps:
+            - run:
+                command: '[ -f ~/project/sample/.test-ran ]'
+                name: Confirm Tests Ran
+      - when:
+          condition: << parameters.use-test-steps >>
+          steps:
+            - run:
+                command: '[ -f ~/project/sample/.custom-test-ran ]'
+                name: Confirm Custom Test Steps Ran
 workflows:
   test-deploy:
     jobs:
@@ -72,6 +114,7 @@ workflows:
                 - true
       - node/install:
           install-yarn: false
+          filters: *filters
           matrix:
             alias: check-version-job
             parameters:
@@ -91,6 +134,59 @@ workflows:
             - run:
                 command: '[ $(node -v) == "v<<matrix.node-version>>" ]'
                 name: Confirm Version
+      - run-tests:
+          filters: *filters
+          matrix:
+            parameters:
+              cache-version:
+                - v3
+              executor:
+                - node/linux
+                - node/macos
+                - node/windows
+              node-version:
+                - 18.14.0
+                - 16.19.0
+              use-test-steps:
+                - false
+                - true
+      - node/test:
+          app-dir: ~/project/sample
+          filters: *filters
+          matrix:
+            alias: run-tests-job
+            parameters:
+              cache-version:
+                - v3
+              executor:
+                - node/linux
+                - node/macos
+                - node/windows
+              node-version:
+                - 18.14.0
+                - 16.19.0
+              use-test-steps:
+                - false
+                - true
+          test-steps:
+            - run: echo '1' > ~/project/sample/.custom-test-ran
+          pre-steps:
+            - run:
+                command: '[ ! -f ~/project/sample/.test-ran ]'
+                name: Confirm Tests Haven't Run Yet
+          post-steps:
+            - unless:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - run:
+                      command: '[ -f ~/project/sample/.test-ran ]'
+                      name: Confirm Tests Ran
+            - when:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - run:
+                      command: '[ -f ~/project/sample/.custom-test-ran ]'
+                      name: Confirm Custom Test Steps Ran
       # The orb must be re-packed for publishing, and saved to the workspace.
       - orb-tools/pack:
           filters: *release-filters
@@ -103,5 +199,7 @@ workflows:
             - orb-tools/pack
             - check-version
             - check-version-job
+            - run-tests
+            - run-tests-job
           context: orb-publishing
           filters: *release-filters
