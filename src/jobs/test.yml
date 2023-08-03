@@ -4,6 +4,12 @@ description: >
 executor: <<parameters.executor>>
 
 parameters:
+  app-dir:
+    default: ~/project
+    description: >-
+      Path to the directory containing your package.json file. Not needed if
+      package.json lives in the root.
+    type: string
   cache-version:
     default: v1
     description: >
@@ -38,10 +44,13 @@ parameters:
       - yarn
     type: enum
   test-steps:
-    default:
-      - run: << parameters.pkg-manager >> test
-    description: Steps to use as the test steps.
+    default: []
+    description: Steps to use as the test steps. Must set use-test-steps parameter to `true`.
     type: steps
+  use-test-steps:
+    default: false
+    description: Use provided test steps - required due to CircleCI shortcomings.
+    type: boolean
   with-node-js-cache:
     default: true
     description: Cache the Node.js version to avoid re-downloading on future runs.
@@ -53,11 +62,13 @@ parameters:
 
 steps:
   - test:
+      app-dir: << parameters.app-dir >>
       cache-version: << parameters.cache-version >>
       checkout-steps: << parameters.checkout-steps >>
       node-version: << parameters.node-version >>
       override-ci-command: << parameters.override-ci-command >>
       pkg-manager: << parameters.pkg-manager >>
       test-steps: << parameters.test-steps >>
+      use-test-steps: << parameters.use-test-steps >>
       with-node-js-cache: << parameters.with-node-js-cache >>
       with-package-cache: << parameters.with-package-cache >>

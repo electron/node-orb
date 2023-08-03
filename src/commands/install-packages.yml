@@ -3,6 +3,12 @@ description: >
   Requires lock file.
 
 parameters:
+  app-dir:
+    default: .
+    description: >-
+      Path to the directory containing your package.json file. Not needed if
+      package.json lives in the root.
+    type: string
   cache-version:
     default: v1
     description: >
@@ -34,6 +40,7 @@ parameters:
 # with fewer options and defaults that better suit our specific needs
 steps:
   - circleci-node/install-packages:
+      app-dir: << parameters.app-dir >>
       cache-version: << parameters.cache-version >>
       override-ci-command: << parameters.override-ci-command >>
       pkg-manager: << parameters.pkg-manager >>

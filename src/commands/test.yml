@@ -2,6 +2,12 @@ description: >
   Simple drop-in job to test your Node.js project automatically.
 
 parameters:
+  app-dir:
+    default: .
+    description: >-
+      Path to the directory containing your package.json file. Not needed if
+      package.json lives in the root.
+    type: string
   cache-version:
     default: v1
     description: >
@@ -33,10 +39,13 @@ parameters:
       - yarn
     type: enum
   test-steps:
-    default:
-      - run: << parameters.pkg-manager >> test
-    description: Steps to use as the test steps.
+    default: []
+    description: Steps to use as the test steps. Must set use-test-steps parameter to `true`.
     type: steps
+  use-test-steps:
+    default: false
+    description: Use provided test steps - required due to CircleCI shortcomings.
+    type: boolean
   with-node-js-cache:
     default: true
     description: Cache the Node.js version to avoid re-downloading on future runs.
@@ -64,8 +73,17 @@ steps:
             node-version: << parameters.node-version >>
             with-cache: << parameters.with-node-js-cache >>
   - install-packages:
+      app-dir: << parameters.app-dir >>
       cache-version: << parameters.cache-version >>
       override-ci-command: << parameters.override-ci-command >>
       pkg-manager: << parameters.pkg-manager >>
       with-cache: << parameters.with-package-cache >>
-  - steps: << parameters.test-steps >>
+  - when:
+      condition: << parameters.use-test-steps >>
+      steps: << parameters.test-steps >>
+  - unless:
+      condition: << parameters.use-test-steps >>
+      steps:
+        - run:
+            command: << parameters.pkg-manager >> test
+            working_directory: << parameters.app-dir >>

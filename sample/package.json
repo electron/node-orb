@@ -1,0 +1,13 @@
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "cleanup": "rimraf .test-ran",
+    "test": "npm run cleanup && echo 1 >> .test-ran"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "rimraf": "^5.0.1"
+  }
+}
