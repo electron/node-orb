@@ -76,6 +76,10 @@ jobs:
           app-dir: ~/project/sample
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
+          post-node-js-install-steps:
+            - run:
+                command: '[ ! -d ~/project/sample/node_modules ]'
+                name: Confirm Packages Aren't Installed Yet
           test-steps:
             - run: echo '1' > ~/project/sample/.custom-test-ran
           use-test-steps: << parameters.use-test-steps >>
@@ -170,6 +174,10 @@ workflows:
                 - true
           test-steps:
             - run: echo '1' > ~/project/sample/.custom-test-ran
+          post-node-js-install-steps:
+            - run:
+                command: '[ ! -d ~/project/sample/node_modules ]'
+                name: Confirm Packages Aren't Installed Yet
           pre-steps:
             - run:
                 command: '[ ! -f ~/project/sample/.test-ran ]'

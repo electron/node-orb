@@ -38,6 +38,10 @@ parameters:
       - npm
       - yarn
     type: enum
+  post-node-js-install-steps:
+    default: []
+    description: Steps to run after installing the Node.js version, before installing packages.
+    type: steps
   test-steps:
     default: []
     description: Steps to use as the test steps. Must set use-test-steps parameter to `true`.
@@ -72,6 +76,7 @@ steps:
         - install:
             node-version: << parameters.node-version >>
             with-cache: << parameters.with-node-js-cache >>
+  - steps: << parameters.post-node-js-install-steps >>
   - install-packages:
       app-dir: << parameters.app-dir >>
       cache-version: << parameters.cache-version >>
