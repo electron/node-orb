@@ -25,7 +25,9 @@ parameters:
     description: The executor to use for the job.
     type: executor
   node-version:
-    description: Specify the Node.js version to install.
+    description: >
+      Specify the Node.js version to install. Can be a major version, a minor
+      version (e.g. 18.16), an exact version number, "latest" or "lts".
     type: string
   override-ci-command:
     default: ''
