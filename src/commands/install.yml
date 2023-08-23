@@ -13,7 +13,9 @@ parameters:
     description: Install Yarn?
     type: boolean
   node-version:
-    description: Specify the Node.js version to install.
+    description: >
+      Specify the Node.js version to install. Can be a major version, a minor
+      version (e.g. 18.16), an exact version number, "latest" or "lts".
     type: string
   with-cache:
     default: true
@@ -24,11 +26,16 @@ steps:
   - run:
       command: <<include(scripts/install-nvm.sh)>>
       name: Install nvm
+  - run:
+      command: <<include(scripts/resolve-node-js-version.sh)>>
+      environment:
+        NODE_PARAM_VERSION: <<parameters.node-version>>
+      name: Resolve full Node.js version
   - when:
       condition: << parameters.with-cache >>
       steps:
         - restore_cache:
-            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-<<parameters.node-version>>
+            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
         - run:
             command: <<include(scripts/restore-node-js-cache.sh)>>
             name: Restore cached Node.js
@@ -44,7 +51,7 @@ steps:
             command: <<include(scripts/prepare-node-js-cache.sh)>>
             name: Prepare Node.js cache
         - save_cache:
-            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-<<parameters.node-version>>
+            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
             paths:
              - ~/.node-js-cache
   - when:
