@@ -10,7 +10,18 @@ if [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]; then
         nvm install lts;
     fi
 
+    nvm use newest;
     echo 'nvm use newest &>/dev/null' >> "$BASH_ENV";
+
+    # Confirm that the Node.js version matches what is expected
+    # using the fully resolved version number from the other
+    # script, 'resolve-node-js-version.sh'. This is necessary
+    # because nvm-windows will silently fail if there's an error
+    # while downloading (and Node.js servers are unstable lately)
+    # See: https://github.com/coreybutler/nvm-windows/issues/738
+    if [ "$(node -v)" != "v$(cat ~/.node-js-version)" ]; then
+        exit 1;
+    fi
 else
     # Copyright (c) 2019 CircleCI Public
     # (derived from https://github.com/CircleCI-Public/node-orb/blob/master/src/scripts/install-nvm.sh)
