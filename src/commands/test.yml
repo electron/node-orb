@@ -68,6 +68,7 @@ steps:
         equal: [ yarn, << parameters.pkg-manager >> ]
       steps:
         - install:
+            cache-version: << parameters.cache-version >>
             install-yarn: true
             node-version: << parameters.node-version >>
             with-cache: << parameters.with-node-js-cache >>
@@ -76,6 +77,8 @@ steps:
         equal: [ npm, << parameters.pkg-manager >> ]
       steps:
         - install:
+            cache-version: << parameters.cache-version >>
+            install-yarn: false
             node-version: << parameters.node-version >>
             with-cache: << parameters.with-node-js-cache >>
   - steps: << parameters.post-node-js-install-steps >>
