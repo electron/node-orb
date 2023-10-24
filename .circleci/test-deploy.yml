@@ -49,7 +49,7 @@ jobs:
           node-version: << parameters.node-version >>
           with-cache: << parameters.with-cache >>
       - run:
-          command: '[ $(node -v) = "v$(cat ~/.node-js-version)" ]'
+          command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
           name: Confirm Version
   install-rosetta:
     executor: << parameters.executor >>
@@ -157,7 +157,7 @@ workflows:
                 - true
           post-steps:
             - run:
-                command: '[ $(node -v) = "v$(cat ~/.node-js-version)" ]'
+                command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
                 name: Confirm Version
       - install-rosetta:
           filters: *filters
