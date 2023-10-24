@@ -1,0 +1,19 @@
+description: >
+  Example using the install-rosetta command.
+
+usage:
+  version: 2.1
+  orbs:
+    node: electronjs/node@x.y.z
+  jobs:
+    install-rosetta:
+      executor: node/macos
+      steps:
+        - node/install-rosetta
+        - run:
+            command: '[ $(/usr/bin/pgrep -q oahd && echo Yes || echo No) = "Yes" ]'
+            name: Confirm Rosetta install
+  workflows:
+    install_rosetta:
+      jobs:
+        - install-rosetta
