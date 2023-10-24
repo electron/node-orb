@@ -51,6 +51,17 @@ jobs:
       - run:
           command: '[ $(node -v) = "v$(cat ~/.node-js-version)" ]'
           name: Confirm Version
+  install-rosetta:
+    executor: << parameters.executor >>
+    parameters:
+      executor:
+        description: The executor to use for the job
+        type: string
+    steps:
+      - node/install-rosetta
+      - run:
+          command: '[ $(/usr/bin/pgrep -q oahd && echo Yes || echo No) = "Yes" ]'
+          name: Confirm Rosetta install
   run-tests:
     executor: << parameters.executor >>
     parameters:
@@ -148,6 +159,12 @@ workflows:
             - run:
                 command: '[ $(node -v) = "v$(cat ~/.node-js-version)" ]'
                 name: Confirm Version
+      - install-rosetta:
+          filters: *filters
+          matrix:
+            parameters:
+              executor:
+                - node/macos
       - run-tests:
           filters: *filters
           matrix:
@@ -222,6 +239,7 @@ workflows:
           requires:
             - orb-tools/pack
             - check-version
+            - install-rosetta
             - check-version-job
             - run-tests
             - run-tests-job
