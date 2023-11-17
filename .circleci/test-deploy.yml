@@ -128,7 +128,7 @@ workflows:
               node-version:
                 - 18.14.0
                 - '16.19'
-                - '16'
+                - '14'
                 - latest
                 - lts
               with-cache:
@@ -149,7 +149,7 @@ workflows:
               node-version:
                 - 18.14.0
                 - '16.19'
-                - '16'
+                - '14'
                 - latest
                 - lts
               with-cache:
@@ -178,7 +178,7 @@ workflows:
               node-version:
                 - 18.14.0
                 - '16.19'
-                - '16'
+                - '14'
                 - latest
                 - lts
               use-test-steps:
@@ -199,7 +199,7 @@ workflows:
               node-version:
                 - 18.14.0
                 - '16.19'
-                - '16'
+                - '14'
                 - latest
                 - lts
               use-test-steps:
