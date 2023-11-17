@@ -32,8 +32,8 @@ else
         nvm install -b "$NODE_ORB_INSTALL_VERSION"; # aka nvm install node. We're being explicit here.
         nvm alias default "$NODE_ORB_INSTALL_VERSION";
     elif [ -n "$NODE_PARAM_VERSION" ] && [ "$NODE_PARAM_VERSION" != "lts" ]; then
-        nvm install -b "$NODE_PARAM_VERSION";
-        nvm alias default "$NODE_PARAM_VERSION";
+        arch -x86_64 nvm install -b "$NODE_PARAM_VERSION";
+        arch -x86_64 nvm alias default "$NODE_PARAM_VERSION";
     elif [ -f ".nvmrc" ]; then
         NVMRC_SPECIFIED_VERSION=$(<.nvmrc);
         nvm install -b "$NVMRC_SPECIFIED_VERSION";
