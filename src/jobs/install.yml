@@ -4,6 +4,12 @@ description: >
 executor: <<parameters.executor>>
 
 parameters:
+  arch:
+    default: ""
+    description: >
+      Arch to use for executing the Bash script - only supported for installing
+      x86_64 Node.js on macOS ARM64 (must install Rosetta first).
+    type: string
   cache-version:
     default: v1
     description: >
@@ -29,6 +35,7 @@ parameters:
 
 steps:
   - install:
+      arch: << parameters.arch >>
       cache-version: << parameters.cache-version >>
       install-yarn: << parameters.install-yarn >>
       node-version: << parameters.node-version >>

@@ -25,6 +25,12 @@ jobs:
   check-version:
     executor: << parameters.executor >>
     parameters:
+      arch:
+        default: ""
+        description: >
+          Arch to use for executing the Bash script - only supported for installing
+          x86_64 Node.js on macOS ARM64 (must install Rosetta first).
+        type: string
       cache-version:
         default: v1
         description: >
@@ -45,12 +51,19 @@ jobs:
         type: boolean
     steps:
       - node/install:
+          arch: << parameters.arch >>
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
           with-cache: << parameters.with-cache >>
       - run:
           command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
           name: Confirm Version
+      - when:
+          condition: << parameters.arch >>
+          steps:
+            - run:
+                command: 'echo "Installed arch: $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch")" && echo "Expected arch: << parameters.arch >>" && [ $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch") = "<< parameters.arch >>" ]'
+                name: Confirm Arch
   install-rosetta:
     executor: << parameters.executor >>
     parameters:
@@ -65,6 +78,12 @@ jobs:
   run-tests:
     executor: << parameters.executor >>
     parameters:
+      arch:
+        default: ""
+        description: >
+          Arch to use for executing the Bash script - only supported for installing
+          x86_64 Node.js on macOS ARM64 (must install Rosetta first).
+        type: string
       cache-version:
         default: v1
         description: >
@@ -89,6 +108,7 @@ jobs:
           name: Confirm Tests Haven't Run Yet
       - node/test:
           app-dir: ~/project/sample
+          arch: << parameters.arch >>
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
           post-node-js-install-steps:
@@ -118,13 +138,14 @@ workflows:
       - check-version:
           filters: *filters
           matrix:
+            alias: check-version
             parameters:
               cache-version:
                 - v3
               executor:
+                - node/windows
                 - node/linux
                 - node/macos
-                - node/windows
               node-version:
                 - 18.14.0
                 - '16.19'
@@ -134,6 +155,29 @@ workflows:
               with-cache:
                 - false
                 - true
+      - check-version:
+          filters: *filters
+          matrix:
+            alias: check-version-with-arch
+            parameters:
+              arch:
+                - arm64
+                - x86_64
+              cache-version:
+                - v3
+              executor:
+                - node/macos
+              node-version:
+                - 18.14.0
+                - '16.19'
+                - '16'
+                - latest
+                - lts
+              with-cache:
+                - false
+                - true
+          pre-steps:
+            - node/install-rosetta
       - node/install:
           install-yarn: false
           filters: *filters
@@ -142,10 +186,10 @@ workflows:
             parameters:
               cache-version:
                 - v3
-              executor:
+              executor: 
+                - node/windows
                 - node/linux
                 - node/macos
-                - node/windows
               node-version:
                 - 18.14.0
                 - '16.19'
@@ -159,6 +203,38 @@ workflows:
             - run:
                 command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
                 name: Confirm Version
+      - node/install:
+          name: node/install-<< matrix.arch >>-<< matrix.cache-version >>-<< matrix.executor >>-<< matrix.node-version >>-<< matrix.with-cache >>
+          install-yarn: false
+          filters: *filters
+          matrix:
+            alias: check-version-job-with-arch
+            parameters:
+              arch:
+                - arm64
+                - x86_64
+              cache-version:
+                - v3
+              executor:
+                - node/macos
+              node-version:
+                - 18.14.0
+                - '16.19'
+                - '16'
+                - latest
+                - lts
+              with-cache:
+                - false
+                - true
+          pre-steps:
+            - node/install-rosetta
+          post-steps:
+            - run:
+                command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
+                name: Confirm Version
+            - run:
+                command: 'echo "Installed arch: $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch")" && echo "Expected arch: << matrix.arch >>" && [ $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch") = "<< matrix.arch >>" ]'
+                name: Confirm Arch
       - install-rosetta:
           filters: *filters
           matrix:
@@ -184,6 +260,29 @@ workflows:
               use-test-steps:
                 - false
                 - true
+      - run-tests:
+          filters: *filters
+          matrix:
+            alias: run-tests-with-arch
+            parameters:
+              arch:
+                - arm64
+                - x86_64
+              cache-version:
+                - v3
+              executor:
+                - node/macos
+              node-version:
+                - 18.14.0
+                - '16.19'
+                - '16'
+                - latest
+                - lts
+              use-test-steps:
+                - false
+                - true
+          pre-steps:
+            - node/install-rosetta
       - node/test:
           app-dir: ~/project/sample
           filters: *filters
@@ -228,6 +327,53 @@ workflows:
                   - run:
                       command: '[ -f ~/project/sample/.custom-test-ran ]'
                       name: Confirm Custom Test Steps Ran
+      - node/test:
+          name: node/test-<< matrix.arch >>-<< matrix.cache-version >>-<< matrix.executor >>-<< matrix.node-version >>-<< matrix.use-test-steps >>
+          app-dir: ~/project/sample
+          filters: *filters
+          matrix:
+            alias: run-tests-job-with-arch
+            parameters:
+              arch:
+                - arm64
+                - x86_64
+              cache-version:
+                - v3
+              executor:
+                - node/macos
+              node-version:
+                - 18.14.0
+                - '16.19'
+                - '16'
+                - latest
+                - lts
+              use-test-steps:
+                - false
+                - true
+          test-steps:
+            - run: echo '1' > ~/project/sample/.custom-test-ran
+          post-node-js-install-steps:
+            - run:
+                command: '[ ! -d ~/project/sample/node_modules ]'
+                name: Confirm Packages Aren't Installed Yet
+          pre-steps:
+            - node/install-rosetta
+            - run:
+                command: '[ ! -f ~/project/sample/.test-ran ]'
+                name: Confirm Tests Haven't Run Yet
+          post-steps:
+            - unless:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - run:
+                      command: '[ -f ~/project/sample/.test-ran ]'
+                      name: Confirm Tests Ran
+            - when:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - run:
+                      command: '[ -f ~/project/sample/.custom-test-ran ]'
+                      name: Confirm Custom Test Steps Ran
       # The orb must be re-packed for publishing, and saved to the workspace.
       - orb-tools/pack:
           filters: *release-filters
@@ -239,9 +385,13 @@ workflows:
           requires:
             - orb-tools/pack
             - check-version
+            - check-version-with-arch
             - install-rosetta
             - check-version-job
+            - check-version-job-with-arch
             - run-tests
+            - run-tests-with-arch
             - run-tests-job
+            - run-tests-job-with-arch
           context: orb-publishing
           filters: *release-filters

@@ -10,6 +10,12 @@ parameters:
       Path to the directory containing your package.json file. Not needed if
       package.json lives in the root.
     type: string
+  arch:
+    default: ""
+    description: >
+      Arch to use for executing the Bash script - only supported for installing
+      x86_64 Node.js on macOS ARM64 (must install Rosetta first).
+    type: string
   cache-version:
     default: v1
     description: >
@@ -69,6 +75,7 @@ parameters:
 steps:
   - test:
       app-dir: << parameters.app-dir >>
+      arch: << parameters.arch >>
       cache-version: << parameters.cache-version >>
       checkout-steps: << parameters.checkout-steps >>
       node-version: << parameters.node-version >>

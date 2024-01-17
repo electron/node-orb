@@ -1,3 +1,13 @@
+# These are the default options CircleCI uses, but they may
+# not be set if we're running under Rosetta, so set them now
+set -eo pipefail
+
+# Similarly, nvm may not be set up under a Rosetta terminal
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # shellcheck disable=SC1091
+    source "${NVM_DIR}/nvm.sh";
+fi
+
 if [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]; then
     # See: https://github.com/coreybutler/nvm-windows#usage
     if [ -n "$NODE_PARAM_VERSION" ]; then
