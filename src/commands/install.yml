@@ -2,6 +2,12 @@ description: >
   Install specified Node.js version.
 
 parameters:
+  arch:
+    default: ""
+    description: >
+      Arch to use for executing the Bash script - only supported for installing
+      x86_64 Node.js on macOS ARM64 (must install Rosetta first).
+    type: string
   cache-version:
     default: v1
     description: >
@@ -35,15 +41,29 @@ steps:
       condition: << parameters.with-cache >>
       steps:
         - restore_cache:
-            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
+            key: node-js-<<parameters.cache-version>>-<< parameters.arch >>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
         - run:
             command: <<include(scripts/restore-node-js-cache.sh)>>
             name: Restore cached Node.js
-  - run:
-      command: <<include(scripts/install-node.sh)>>
-      environment:
-        NODE_PARAM_VERSION: <<parameters.node-version>>
-      name: Install Node.js <<parameters.node-version>>
+  - when:
+      condition:
+        not: << parameters.arch >>
+      steps:
+        - run:
+            command: <<include(scripts/install-node.sh)>>
+            environment:
+              NODE_PARAM_VERSION: <<parameters.node-version>>
+            name: Install Node.js <<parameters.node-version>>
+  - when:
+      condition: << parameters.arch >>
+      steps:
+        - run:
+            command: <<include(scripts/install-node.sh)>>
+            environment:
+              ARCHPREFERENCE: <<parameters.arch>>
+              NODE_PARAM_VERSION: <<parameters.node-version>>
+            name: Install Node.js <<parameters.node-version>> (<<parameters.arch>>)
+            shell: arch /bin/bash
   - when:
       condition: << parameters.with-cache >>
       steps:
@@ -51,7 +71,7 @@ steps:
             command: <<include(scripts/prepare-node-js-cache.sh)>>
             name: Prepare Node.js cache
         - save_cache:
-            key: node-js-<<parameters.cache-version>>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
+            key: node-js-<<parameters.cache-version>>-<< parameters.arch >>-{{ arch }}-{{ checksum "~/.nvm-version" }}-{{ checksum "~/.node-js-version" }}
             paths:
              - ~/.node-js-cache
   - when:
