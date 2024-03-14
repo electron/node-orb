@@ -19,6 +19,16 @@ release-filters: &release-filters
   tags:
     only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
+executors:
+  linux-edge:
+    docker:
+      - image: cimg/base:edge
+  windows-edge:
+    machine:
+      image: windows-server-2022-gui:edge
+      resource_class: windows.medium
+      shell: bash.exe
+
 jobs:
   # Create jobs to test the commands of your orbs.
   # You may want to add additional validation steps to ensure the commands are working as expected.
@@ -146,6 +156,8 @@ workflows:
                 - node/windows
                 - node/linux
                 - node/macos
+                - linux-edge
+                - windows-edge
               node-version:
                 - 18.14.0
                 - '16.19'
@@ -190,6 +202,8 @@ workflows:
                 - node/windows
                 - node/linux
                 - node/macos
+                - linux-edge
+                - windows-edge
               node-version:
                 - 18.14.0
                 - '16.19'
@@ -251,6 +265,8 @@ workflows:
                 - node/linux
                 - node/macos
                 - node/windows
+                - linux-edge
+                - windows-edge
               node-version:
                 - 18.14.0
                 - '16.19'
@@ -295,6 +311,8 @@ workflows:
                 - node/linux
                 - node/macos
                 - node/windows
+                - linux-edge
+                - windows-edge
               node-version:
                 - 18.14.0
                 - '16.19'
