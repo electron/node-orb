@@ -19,6 +19,46 @@ release-filters: &release-filters
   tags:
     only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
+cache-version: &cache-version
+  - v3
+
+node-versions: &node-versions
+  - 20.11.1
+  - '18.19'
+  - '16'
+  - latest
+  - lts
+
+executor-matrix: &executor-matrix
+  - node/linux
+  - node/macos
+  - node/windows
+
+step-confirm-version: &step-confirm-version
+  run:
+    command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
+    name: Confirm Version
+
+step-confirm-tests-ran: &step-confirm-tests-ran
+  run:
+    command: '[ -f ~/project/sample/.test-ran ]'
+    name: Confirm Tests Ran
+
+step-confirm-tests-not-ran: &step-confirm-tests-not-ran
+  run:
+    command: '[ ! -f ~/project/sample/.test-ran ]'
+    name: Confirm Tests Haven't Run Yet
+
+step-confirm-packages-not-installed: &step-confirm-packages-not-installed
+  run:
+    command: '[ ! -d ~/project/sample/node_modules ]'
+    name: Confirm Packages Aren't Installed Yet
+
+step-confirm-custom-steps-ran: &step-confirm-custom-steps-ran
+  run:
+    command: '[ -f ~/project/sample/.custom-test-ran ]'
+    name: Confirm Custom Test Steps Ran
+
 executors:
   linux-edge:
     docker:
@@ -65,9 +105,7 @@ jobs:
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
           with-cache: << parameters.with-cache >>
-      - run:
-          command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
-          name: Confirm Version
+      - *step-confirm-version
       - when:
           condition: << parameters.arch >>
           steps:
@@ -113,33 +151,25 @@ jobs:
         description: Use provided test steps - required due to CircleCI shortcomings.
         type: boolean
     steps:
-      - run:
-          command: '[ ! -f ~/project/sample/.test-ran ]'
-          name: Confirm Tests Haven't Run Yet
+      - *step-confirm-tests-not-ran
       - node/test:
           app-dir: ~/project/sample
           arch: << parameters.arch >>
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
           post-node-js-install-steps:
-            - run:
-                command: '[ ! -d ~/project/sample/node_modules ]'
-                name: Confirm Packages Aren't Installed Yet
+            - *step-confirm-packages-not-installed
           test-steps:
             - run: echo '1' > ~/project/sample/.custom-test-ran
           use-test-steps: << parameters.use-test-steps >>
       - unless:
           condition: << parameters.use-test-steps >>
           steps:
-            - run:
-                command: '[ -f ~/project/sample/.test-ran ]'
-                name: Confirm Tests Ran
+            - *step-confirm-tests-ran
       - when:
           condition: << parameters.use-test-steps >>
           steps:
-            - run:
-                command: '[ -f ~/project/sample/.custom-test-ran ]'
-                name: Confirm Custom Test Steps Ran
+            - *step-confirm-custom-steps-ran
 workflows:
   test-deploy:
     jobs:
@@ -150,20 +180,9 @@ workflows:
           matrix:
             alias: check-version
             parameters:
-              cache-version:
-                - v3
-              executor:
-                - node/windows
-                - node/linux
-                - node/macos
-                - linux-edge
-                - windows-edge
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version: *node-versions
               with-cache:
                 - false
                 - true
@@ -175,48 +194,58 @@ workflows:
               arch:
                 - arm64
                 - x86_64
-              cache-version:
-                - v3
+              cache-version: *cache-version
               executor:
                 - node/macos
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              node-version: *node-versions
               with-cache:
                 - false
                 - true
           pre-steps:
             - node/install-rosetta
+      - check-version:
+          filters: *filters
+          matrix:
+            alias: check-version-edge
+            parameters:
+              cache-version: *cache-version
+              executor:
+                - linux-edge
+                - windows-edge
+              node-version: *node-versions
+              with-cache:
+                - false
+                - true
       - node/install:
           install-yarn: false
           filters: *filters
           matrix:
             alias: check-version-job
             parameters:
-              cache-version:
-                - v3
-              executor: 
-                - node/windows
-                - node/linux
-                - node/macos
-                - linux-edge
-                - windows-edge
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version: *node-versions
               with-cache:
                 - false
                 - true
           post-steps:
-            - run:
-                command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
-                name: Confirm Version
+            - *step-confirm-version
+      - node/install:
+          install-yarn: false
+          filters: *filters
+          matrix:
+            alias: check-version-edge-job
+            parameters:
+              cache-version: *cache-version
+              executor: 
+                - linux-edge
+                - windows-edge
+              node-version: *node-versions
+              with-cache:
+                - false
+                - true
+          post-steps:
+            - *step-confirm-version
       - node/install:
           name: node/install-<< matrix.arch >>-<< matrix.cache-version >>-<< matrix.executor >>-<< matrix.node-version >>-<< matrix.with-cache >>
           install-yarn: false
@@ -227,25 +256,17 @@ workflows:
               arch:
                 - arm64
                 - x86_64
-              cache-version:
-                - v3
+              cache-version: *cache-version
               executor:
                 - node/macos
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              node-version: *node-versions
               with-cache:
                 - false
                 - true
           pre-steps:
             - node/install-rosetta
           post-steps:
-            - run:
-                command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
-                name: Confirm Version
+            - *step-confirm-version
             - run:
                 command: 'echo "Installed arch: $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch")" && echo "Expected arch: << matrix.arch >>" && [ $(node -p "process.arch === \"x64\" ? \"x86_64\" : process.arch") = "<< matrix.arch >>" ]'
                 name: Confirm Arch
@@ -259,20 +280,9 @@ workflows:
           filters: *filters
           matrix:
             parameters:
-              cache-version:
-                - v3
-              executor:
-                - node/linux
-                - node/macos
-                - node/windows
-                - linux-edge
-                - windows-edge
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version: *node-versions
               use-test-steps:
                 - false
                 - true
@@ -284,67 +294,55 @@ workflows:
               arch:
                 - arm64
                 - x86_64
-              cache-version:
-                - v3
+              cache-version: *cache-version
               executor:
                 - node/macos
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              node-version: *node-versions
               use-test-steps:
                 - false
                 - true
           pre-steps:
             - node/install-rosetta
+      - run-tests:
+          filters: *filters
+          matrix:
+            alias: run-tests-edge
+            parameters:
+              cache-version: *cache-version
+              executor:
+                - linux-edge
+                - windows-edge
+              node-version: *node-versions
+              use-test-steps:
+                - false
+                - true
       - node/test:
           app-dir: ~/project/sample
           filters: *filters
           matrix:
             alias: run-tests-job
             parameters:
-              cache-version:
-                - v3
-              executor:
-                - node/linux
-                - node/macos
-                - node/windows
-                - linux-edge
-                - windows-edge
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version: *node-versions
               use-test-steps:
                 - false
                 - true
           test-steps:
             - run: echo '1' > ~/project/sample/.custom-test-ran
           post-node-js-install-steps:
-            - run:
-                command: '[ ! -d ~/project/sample/node_modules ]'
-                name: Confirm Packages Aren't Installed Yet
+            - *step-confirm-packages-not-installed
           pre-steps:
-            - run:
-                command: '[ ! -f ~/project/sample/.test-ran ]'
-                name: Confirm Tests Haven't Run Yet
+            - *step-confirm-tests-not-ran
           post-steps:
             - unless:
                 condition: << matrix.use-test-steps >>
                 steps:
-                  - run:
-                      command: '[ -f ~/project/sample/.test-ran ]'
-                      name: Confirm Tests Ran
+                  - *step-confirm-tests-ran
             - when:
                 condition: << matrix.use-test-steps >>
                 steps:
-                  - run:
-                      command: '[ -f ~/project/sample/.custom-test-ran ]'
-                      name: Confirm Custom Test Steps Ran
+                  - *step-confirm-custom-steps-ran
       - node/test:
           name: node/test-<< matrix.arch >>-<< matrix.cache-version >>-<< matrix.executor >>-<< matrix.node-version >>-<< matrix.use-test-steps >>
           app-dir: ~/project/sample
@@ -355,43 +353,58 @@ workflows:
               arch:
                 - arm64
                 - x86_64
-              cache-version:
-                - v3
+              cache-version: *cache-version
               executor:
                 - node/macos
-              node-version:
-                - 18.14.0
-                - '16.19'
-                - '16'
-                - latest
-                - lts
+              node-version: *node-versions
               use-test-steps:
                 - false
                 - true
           test-steps:
             - run: echo '1' > ~/project/sample/.custom-test-ran
           post-node-js-install-steps:
-            - run:
-                command: '[ ! -d ~/project/sample/node_modules ]'
-                name: Confirm Packages Aren't Installed Yet
+            - *step-confirm-packages-not-installed
           pre-steps:
             - node/install-rosetta
-            - run:
-                command: '[ ! -f ~/project/sample/.test-ran ]'
-                name: Confirm Tests Haven't Run Yet
+            - *step-confirm-tests-not-ran
           post-steps:
             - unless:
                 condition: << matrix.use-test-steps >>
                 steps:
-                  - run:
-                      command: '[ -f ~/project/sample/.test-ran ]'
-                      name: Confirm Tests Ran
+                  - *step-confirm-tests-ran
             - when:
                 condition: << matrix.use-test-steps >>
                 steps:
-                  - run:
-                      command: '[ -f ~/project/sample/.custom-test-ran ]'
-                      name: Confirm Custom Test Steps Ran
+                  - *step-confirm-custom-steps-ran
+      - node/test:
+          app-dir: ~/project/sample
+          filters: *filters
+          matrix:
+            alias: run-tests-edge-job
+            parameters:
+              cache-version: *cache-version
+              executor:
+                - linux-edge
+                - windows-edge
+              node-version: *node-versions
+              use-test-steps:
+                - false
+                - true
+          test-steps:
+            - run: echo '1' > ~/project/sample/.custom-test-ran
+          post-node-js-install-steps:
+            - *step-confirm-packages-not-installed
+          pre-steps:
+            - *step-confirm-tests-not-ran
+          post-steps:
+            - unless:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - *step-confirm-tests-ran
+            - when:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - *step-confirm-custom-steps-ran
       # The orb must be re-packed for publishing, and saved to the workspace.
       - orb-tools/pack:
           filters: *release-filters
