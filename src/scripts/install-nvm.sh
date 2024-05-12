@@ -28,5 +28,5 @@ else
     fi
 
     # Store the version so cache keys can easily use it
-    nvm -v > ~/.nvm-version;
+    nvm --version > ~/.nvm-version;
 fi
