@@ -24,9 +24,15 @@ parameters:
     description: Install Yarn?
     type: boolean
   node-version:
+    default: ""
     description: >
       Specify the Node.js version to install. Can be a major version, a minor
       version (e.g. 18.16), an exact version number, "latest" or "lts".
+    type: string
+  node-version-file:
+    default: ""
+    description: >
+      File containing the Node.js version to install, e.g. .nvmrc or .node-version.
     type: string
   with-cache:
     default: true
@@ -39,4 +45,5 @@ steps:
       cache-version: << parameters.cache-version >>
       install-yarn: << parameters.install-yarn >>
       node-version: << parameters.node-version >>
+      node-version-file: << parameters.node-version-file >>
       with-cache: << parameters.with-cache >>

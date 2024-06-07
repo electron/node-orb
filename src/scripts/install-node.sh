@@ -2,10 +2,15 @@
 # not be set if we're running under Rosetta, so set them now
 set -eo pipefail
 
+if [ -n "$NODE_PARAM_VERSION_FILE" ] && [ -n "$NODE_PARAM_VERSION" ]; then
+    echo "Cannot provide both node-version and node-version-file";
+    exit 1;
+fi
+
 # Similarly, nvm may not be set up under a Rosetta terminal
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # shellcheck disable=SC1091
-    source "${NVM_DIR}/nvm.sh";
+    source "${NVM_DIR}/nvm.sh" --no-use;
 fi
 
 if [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]; then
@@ -13,11 +18,12 @@ if [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]; then
     if [ -n "$NODE_PARAM_VERSION" ]; then
         # nvm-windows supports "latest" and "lts" as possible values
         nvm install "$NODE_PARAM_VERSION";
-    elif [ -f ".nvmrc" ]; then
-        NVMRC_SPECIFIED_VERSION=$(<.nvmrc);
-        nvm install "$NVMRC_SPECIFIED_VERSION";
+    elif [ -n "$NODE_PARAM_VERSION_FILE" ] && [ -f "$NODE_PARAM_VERSION_FILE" ]; then
+        NODE_PARAM_VERSION=$(<"$NODE_PARAM_VERSION_FILE");
+        nvm install "$NODE_PARAM_VERSION";
     else
-        nvm install lts;
+        echo "Must provide either node-version or node-version-file";
+        exit 1;
     fi
 
     nvm use newest;
@@ -41,16 +47,19 @@ else
         NODE_ORB_INSTALL_VERSION=$(nvm ls-remote | tail -n1 | grep -Eo 'v[0-9]+\.[0-9]+\.[0-9]+');
         nvm install -b "$NODE_ORB_INSTALL_VERSION"; # aka nvm install node. We're being explicit here.
         nvm alias default "$NODE_ORB_INSTALL_VERSION";
-    elif [ -n "$NODE_PARAM_VERSION" ] && [ "$NODE_PARAM_VERSION" != "lts" ]; then
-        nvm install -b "$NODE_PARAM_VERSION";
-        nvm alias default "$NODE_PARAM_VERSION";
-    elif [ -f ".nvmrc" ]; then
-        NVMRC_SPECIFIED_VERSION=$(<.nvmrc);
-        nvm install -b "$NVMRC_SPECIFIED_VERSION";
-        nvm alias default "$NVMRC_SPECIFIED_VERSION";
-    else
+    elif [ "$NODE_PARAM_VERSION" = "lts" ]; then
         nvm install -b --default --lts;
         nvm alias default lts/*;
+    elif [ -n "$NODE_PARAM_VERSION" ]; then
+        nvm install -b "$NODE_PARAM_VERSION";
+        nvm alias default "$NODE_PARAM_VERSION";
+    elif [ -n "$NODE_PARAM_VERSION_FILE" ] && [ -f "$NODE_PARAM_VERSION_FILE" ]; then
+        NODE_PARAM_VERSION=$(<"$NODE_PARAM_VERSION_FILE");
+        nvm install -b "$NODE_PARAM_VERSION";
+        nvm alias default "$NODE_PARAM_VERSION";
+    else
+        echo "Must provide either node-version or node-version-file";
+        exit 1;
     fi
 
     echo 'nvm use default &>/dev/null' >> "$BASH_ENV";

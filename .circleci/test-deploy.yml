@@ -39,6 +39,16 @@ step-confirm-version: &step-confirm-version
     command: 'echo "Installed version: $(node -v)" && echo "Expected version: v$(cat ~/.node-js-version)" && [ $(node -v) = "v$(cat ~/.node-js-version)" ]'
     name: Confirm Version
 
+step-confirm-nvmrc-version: &step-confirm-nvmrc-version
+  run:
+    command: 'echo ".nvmrc version: v$(cat .nvmrc)" && echo "Resolved version: v$(cat ~/.node-js-version)" && [ "$(cat .nvmrc)" = "$(cat ~/.node-js-version)" ]'
+    name: Confirm .nvmrc Version
+
+step-confirm-tests-nvmrc-version: &step-confirm-tests-nvmrc-version
+  run:
+    command: 'echo ".nvmrc version: v$(cat ~/project/sample/.nvmrc)" && echo "Resolved version: v$(cat ~/.node-js-version)" && [ "$(cat ~/project/sample/.nvmrc)" = "$(cat ~/.node-js-version)" ]'
+    name: Confirm .nvmrc Version
+
 step-confirm-tests-ran: &step-confirm-tests-ran
   run:
     command: '[ -f ~/project/sample/.test-ran ]'
@@ -91,9 +101,15 @@ jobs:
         description: The executor to use for the job
         type: string
       node-version:
+        default: ""
         description: >
           Specify the Node.js version to install. Can be a major version, a minor
           version (e.g. 18.16), an exact version number, "latest" or "lts".
+        type: string
+      node-version-file:
+        default: ""
+        description: >
+          File containing the Node.js version to install, e.g. .nvmrc or .node-version.
         type: string
       with-cache:
         default: true
@@ -104,6 +120,7 @@ jobs:
           arch: << parameters.arch >>
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
+          node-version-file: << parameters.node-version-file >>
           with-cache: << parameters.with-cache >>
       - *step-confirm-version
       - when:
@@ -142,9 +159,15 @@ jobs:
         description: The executor to use for the job
         type: string
       node-version:
+        default: ""
         description: >
           Specify the Node.js version to install. Can be a major version, a minor
           version (e.g. 18.16), an exact version number, "latest" or "lts".
+        type: string
+      node-version-file:
+        default: ""
+        description: >
+          File containing the Node.js version to install, e.g. .nvmrc or .node-version.
         type: string
       use-test-steps:
         default: false
@@ -157,6 +180,7 @@ jobs:
           arch: << parameters.arch >>
           cache-version: << parameters.cache-version >>
           node-version: << parameters.node-version >>
+          node-version-file: << parameters.node-version-file >>
           post-node-js-install-steps:
             - *step-confirm-packages-not-installed
           test-steps:
@@ -186,6 +210,22 @@ workflows:
               with-cache:
                 - false
                 - true
+      - check-version:
+          filters: *filters
+          matrix:
+            alias: check-version-with-node-version-file
+            parameters:
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version-file:
+                - '.nvmrc'
+              with-cache:
+                - false
+                - true
+          pre-steps:
+            - run: echo '20.6.1' >> .nvmrc
+          post-steps:
+            - *step-confirm-nvmrc-version
       - check-version:
           filters: *filters
           matrix:
@@ -229,6 +269,24 @@ workflows:
                 - false
                 - true
           post-steps:
+            - *step-confirm-version
+      - node/install:
+          install-yarn: false
+          filters: *filters
+          matrix:
+            alias: check-version-job-with-node-version-file
+            parameters:
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version-file:
+                - '.nvmrc'
+              with-cache:
+                - false
+                - true
+          pre-steps:
+            - run: echo '20.6.1' >> .nvmrc
+          post-steps:
+            - *step-confirm-nvmrc-version
             - *step-confirm-version
       - node/install:
           install-yarn: false
@@ -289,6 +347,20 @@ workflows:
       - run-tests:
           filters: *filters
           matrix:
+            alias: run-tests-with-node-version-file
+            parameters:
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version-file:
+                - './sample/.nvmrc'
+              use-test-steps:
+                - false
+                - true
+          post-steps:
+            - *step-confirm-tests-nvmrc-version
+      - run-tests:
+          filters: *filters
+          matrix:
             alias: run-tests-with-arch
             parameters:
               arch:
@@ -335,6 +407,35 @@ workflows:
           pre-steps:
             - *step-confirm-tests-not-ran
           post-steps:
+            - unless:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - *step-confirm-tests-ran
+            - when:
+                condition: << matrix.use-test-steps >>
+                steps:
+                  - *step-confirm-custom-steps-ran
+      - node/test:
+          app-dir: ~/project/sample
+          filters: *filters
+          matrix:
+            alias: run-tests-job-with-node-version-file
+            parameters:
+              cache-version: *cache-version
+              executor: *executor-matrix
+              node-version-file:
+                - './sample/.nvmrc'
+              use-test-steps:
+                - false
+                - true
+          test-steps:
+            - run: echo '1' > ~/project/sample/.custom-test-ran
+          post-node-js-install-steps:
+            - *step-confirm-packages-not-installed
+          pre-steps:
+            - *step-confirm-tests-not-ran
+          post-steps:
+            - *step-confirm-tests-nvmrc-version
             - unless:
                 condition: << matrix.use-test-steps >>
                 steps:
@@ -417,12 +518,16 @@ workflows:
             - orb-tools/pack
             - check-version
             - check-version-with-arch
+            - check-version-with-node-version-file
             - install-rosetta
             - check-version-job
             - check-version-job-with-arch
+            - check-version-job-with-node-version-file
             - run-tests
             - run-tests-with-arch
+            - run-tests-with-node-version-file
             - run-tests-job
             - run-tests-job-with-arch
+            - run-tests-job-with-node-version-file
           context: orb-publishing
           filters: *release-filters
