@@ -26,9 +26,15 @@ parameters:
     description: Steps to use as the checkout steps.
     type: steps
   node-version:
+    default: ""
     description: >
       Specify the Node.js version to install. Can be a major version, a minor
       version (e.g. 18.16), an exact version number, "latest" or "lts".
+    type: string
+  node-version-file:
+    default: ""
+    description: >
+      File containing the Node.js version to install, e.g. .nvmrc or .node-version.
     type: string
   override-ci-command:
     default: ''
@@ -78,6 +84,7 @@ steps:
             cache-version: << parameters.cache-version >>
             install-yarn: true
             node-version: << parameters.node-version >>
+            node-version-file: << parameters.node-version-file >>
             with-cache: << parameters.with-node-js-cache >>
   - when:
       condition:
@@ -88,6 +95,7 @@ steps:
             cache-version: << parameters.cache-version >>
             install-yarn: false
             node-version: << parameters.node-version >>
+            node-version-file: << parameters.node-version-file >>
             with-cache: << parameters.with-node-js-cache >>
   - steps: << parameters.post-node-js-install-steps >>
   - install-packages:

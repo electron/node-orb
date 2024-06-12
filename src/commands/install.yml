@@ -19,9 +19,15 @@ parameters:
     description: Install Yarn?
     type: boolean
   node-version:
+    default: ""
     description: >
       Specify the Node.js version to install. Can be a major version, a minor
       version (e.g. 18.16), an exact version number, "latest" or "lts".
+    type: string
+  node-version-file:
+    default: ""
+    description: >
+      File containing the Node.js version to install, e.g. .nvmrc or .node-version.
     type: string
   with-cache:
     default: true
@@ -36,6 +42,7 @@ steps:
       command: <<include(scripts/resolve-node-js-version.sh)>>
       environment:
         NODE_PARAM_VERSION: <<parameters.node-version>>
+        NODE_PARAM_VERSION_FILE: <<parameters.node-version-file>>
       name: Resolve full Node.js version
   - when:
       condition: << parameters.with-cache >>
@@ -49,21 +56,45 @@ steps:
       condition:
         not: << parameters.arch >>
       steps:
-        - run:
-            command: <<include(scripts/install-node.sh)>>
-            environment:
-              NODE_PARAM_VERSION: <<parameters.node-version>>
-            name: Install Node.js <<parameters.node-version>>
+        - when:
+            condition: << parameters.node-version-file >>
+            steps:
+              - run:
+                  command: <<include(scripts/install-node.sh)>>
+                  environment:
+                    NODE_PARAM_VERSION_FILE: <<parameters.node-version-file>>
+                  name: Install Node.js Version From <<parameters.node-version-file>>
+        - unless:
+            condition: << parameters.node-version-file >>
+            steps:
+              - run:
+                  command: <<include(scripts/install-node.sh)>>
+                  environment:
+                    NODE_PARAM_VERSION: <<parameters.node-version>>
+                  name: Install Node.js <<parameters.node-version>>
   - when:
       condition: << parameters.arch >>
       steps:
-        - run:
-            command: <<include(scripts/install-node.sh)>>
-            environment:
-              ARCHPREFERENCE: <<parameters.arch>>
-              NODE_PARAM_VERSION: <<parameters.node-version>>
-            name: Install Node.js <<parameters.node-version>> (<<parameters.arch>>)
-            shell: arch /bin/bash
+        - when:
+            condition: << parameters.node-version-file >>
+            steps:
+              - run:
+                  command: <<include(scripts/install-node.sh)>>
+                  environment:
+                    ARCHPREFERENCE: <<parameters.arch>>
+                    NODE_PARAM_VERSION_FILE: <<parameters.node-version-file>>
+                  name: Install Node.js Version From <<parameters.node-version-file>> (<<parameters.arch>>)
+                  shell: arch /bin/bash
+        - unless:
+            condition: << parameters.node-version-file >>
+            steps:
+              - run:
+                  command: <<include(scripts/install-node.sh)>>
+                  environment:
+                    ARCHPREFERENCE: <<parameters.arch>>
+                    NODE_PARAM_VERSION: <<parameters.node-version>>
+                  name: Install Node.js <<parameters.node-version>> (<<parameters.arch>>)
+                  shell: arch /bin/bash
   - when:
       condition: << parameters.with-cache >>
       steps:
