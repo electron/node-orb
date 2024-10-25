@@ -24,7 +24,7 @@ cache-version: &cache-version
 
 node-versions: &node-versions
   - 20.11.1
-  - '18.19'
+  - '18.1'
   - '16'
   - latest
   - lts
