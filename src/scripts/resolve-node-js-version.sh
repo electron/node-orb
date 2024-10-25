@@ -27,7 +27,7 @@ elif [ -n "$NODE_PARAM_VERSION" ]; then
         ;;
 
       *)
-        RESOLVED_VERSION=$(curl -fs "$NODE_RELEASES" | grep -Eo "\"version\":\s*\"v${NODE_PARAM_VERSION}[.0-9]*\"" - | grep -Eo "$VERSION_NUMBER_REGEX" | $SORT -V | tail -n1)
+        RESOLVED_VERSION=$(curl -fs "$NODE_RELEASES" | grep -Eo "\"version\":\s*\"v${NODE_PARAM_VERSION}(.[0-9]+)*\"" - | grep -Eo "$VERSION_NUMBER_REGEX" | $SORT -V | tail -n1)
         ;;
     esac
 else
